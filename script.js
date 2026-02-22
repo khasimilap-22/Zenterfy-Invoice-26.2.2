@@ -5,10 +5,11 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 let editingId = null; 
 
-window.onload = function() {
-    resetInvoice("2025-26-001"); // Default Starting Number
-    renderSalesList();
-};
+window.addEventListener('DOMContentLoaded', (event) => {
+    console.log('DOM fully loaded and parsed');
+    renderSalesList(); // Page load hote hi list mangwao
+    resetInvoice("2025-26-001"); 
+});
 
 // --- ROW MANAGEMENT ---
 
@@ -164,23 +165,34 @@ async function renderSalesList() {
     const list = document.getElementById('salesList');
     if(!list) return;
 
-    const { data, error } = await supabaseClient.from('invoices').select('*').order('created_at', { ascending: false });
+    // Loading indicator (optional but good for UX)
+    list.innerHTML = '<div style="font-size:12px; color:gray; padding:10px;">Loading Register...</div>';
+
+    const { data, error } = await supabaseClient
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false });
     
     if (error) {
         console.error("Fetch Error:", error);
+        list.innerHTML = "Error loading data";
         return;
     }
 
-    list.innerHTML = data.map(item => `
-        <div class="sales-card" style="background:#fff; border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <div style="font-weight:700; color:#334155;">${item.client_name}</div>
-            <div style="font-size:11px; color:#64748b;">No: ${item.invoice_no} | ${item.invoice_data.total}</div>
-            <div style="margin-top:8px; display:flex; gap:10px;">
-                <button onclick="editInvoice('${item.id}')" style="background:#f1f5f9; border:none; cursor:pointer; padding:4px 8px; border-radius:4px;">✏️ Edit</button>
-                <button onclick="deleteInvoice('${item.id}')" style="background:#f1f5f9; border:none; cursor:pointer; padding:4px 8px; border-radius:4px; color:#ef4444;">🗑️ Delete</button>
+    if (data && data.length > 0) {
+        list.innerHTML = data.map(item => `
+            <div class="sales-card" style="background:#fff; border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-weight:700; color:#334155;">${item.client_name}</div>
+                <div style="font-size:11px; color:#64748b;">No: ${item.invoice_no} | ${item.invoice_data.total}</div>
+                <div style="margin-top:8px; display:flex; gap:10px;">
+                    <button onclick="editInvoice('${item.id}')" style="background:#f1f5f9; border:none; cursor:pointer; padding:4px 8px; border-radius:4px;">✏️ Edit</button>
+                    <button onclick="deleteInvoice('${item.id}')" style="background:#f1f5f9; border:none; cursor:pointer; padding:4px 8px; border-radius:4px; color:#ef4444;">🗑️ Delete</button>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    } else {
+        list.innerHTML = '<div style="font-size:12px; color:gray; padding:10px;">No invoices found.</div>';
+    }
 }
 
 async function editInvoice(id) {
