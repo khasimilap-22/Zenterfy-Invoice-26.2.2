@@ -1,3 +1,5 @@
+
+
 // 1. Supabase Connection
 const supabaseUrl = 'https://zicpxxyoyavgmvephgus.supabase.co'; 
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppY3B4eHlveWF2Z212ZXBoZ3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzEzMTYsImV4cCI6MjA4NzI0NzMxNn0.VxszlGUB3ANLEFS6rZtSHS9h-dP5-4fIiSV6PMIFNJQ';     
@@ -5,16 +7,16 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 let editingId = null; 
 
-window.addEventListener('DOMContentLoaded', (event) => {
-    console.log('DOM fully loaded and parsed');
-    renderSalesList(); // Page load hote hi list mangwao
-    resetInvoice("2025-26-001"); 
-});
+// Page load par list dikhao
+window.onload = function() {
+    renderSalesList();
+    resetInvoice("2025-26-001");
+};
 
 // --- ROW MANAGEMENT ---
-
 function addNewRow(data = null) {
     const tbody = document.getElementById('itemsBody');
+    if(!tbody) return;
     const srNo = tbody.rows.length + 1;
     const row = `<tr class="item-row">
         <td>${srNo}</td>
@@ -56,7 +58,6 @@ function setupListeners() {
 }
 
 // --- CALCULATIONS ---
-
 function calculateInvoice() {
     let subTotal = 0;
     let hsnGroups = {};
@@ -75,12 +76,15 @@ function calculateInvoice() {
         }
     });
 
-    document.getElementById('subTotalVal').innerText = subTotal.toFixed(2);
+    const subTotalEl = document.getElementById('subTotalVal');
+    if(subTotalEl) subTotalEl.innerText = subTotal.toFixed(2);
     updateGstTable(hsnGroups, subTotal);
 }
 
 function updateGstTable(hsnGroups, subTotal) {
     const gstBody = document.getElementById('gstBody');
+    if(!gstBody) return;
+
     let existingRates = {};
     document.querySelectorAll('#gstBody tr').forEach(row => {
         existingRates[row.cells[0].innerText] = row.cells[1].innerText;
@@ -109,11 +113,17 @@ function updateGstTable(hsnGroups, subTotal) {
     setupTaxListeners();
 
     const grandTotal = subTotal + totalTax;
-    document.getElementById('totalTaxSumVal').innerText = totalTax.toFixed(2);
-    document.getElementById('grandTotalVal').innerText = "₹ " + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    const taxSumEl = document.getElementById('totalTaxSumVal');
+    const grandTotalEl = document.getElementById('grandTotalVal');
+    
+    if(taxSumEl) taxSumEl.innerText = totalTax.toFixed(2);
+    if(grandTotalEl) grandTotalEl.innerText = "₹ " + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
 
-    document.getElementById('gstWords').innerText = numberToWords(Math.round(totalTax)) + " RUPEES ONLY";
-    document.getElementById('grandWords').innerText = numberToWords(Math.round(grandTotal)) + " RUPEES ONLY";
+    // Words Conversion
+    const gstWords = document.getElementById('gstWords');
+    const grandWords = document.getElementById('grandWords');
+    if(gstWords) gstWords.innerText = numberToWords(Math.round(totalTax)) + " RUPEES ONLY";
+    if(grandWords) grandWords.innerText = numberToWords(Math.round(grandTotal)) + " RUPEES ONLY";
 }
 
 function setupTaxListeners() {
@@ -126,14 +136,14 @@ function setupTaxListeners() {
     });
 }
 
-// --- CLOUD STORAGE (SUPABASE) ---
-
+// --- CLOUD STORAGE ---
 async function saveInvoice() {
-    // Correct IDs for Invoice Number and Client Name
-    const invNo = document.querySelector('.grid-right .grid-row:nth-child(1) .field').innerText.trim();
-    const client = document.querySelector('.grid-left .grid-row:nth-child(1) .field').innerText.trim();
-    
-    if(!client) { alert("Bhai, Client Name toh dalo!"); return; }
+    const clientEl = document.querySelector('.grid-left .grid-row:nth-child(1) .field');
+    const invNoEl = document.querySelector('.grid-right .grid-row:nth-child(1) .field');
+    const dateEl = document.querySelector('.grid-right .grid-row:nth-child(2) .field');
+    const addrEl = document.querySelector('.grid-left .grid-row:nth-child(3) .field');
+
+    if(!clientEl || clientEl.innerText.trim() === "") { alert("Bhai, Client Name toh dalo!"); return; }
 
     const invoiceData = {
         items: Array.from(document.querySelectorAll('#itemsBody tr')).map(row => ({
@@ -144,105 +154,97 @@ async function saveInvoice() {
         })).filter(i => i.name.trim() !== ""),
         total: document.getElementById('grandTotalVal').innerText,
         gstTotal: document.getElementById('totalTaxSumVal').innerText,
-        date: document.querySelector('.grid-right .grid-row:nth-child(2) .field').innerText,
-        address: document.querySelector('.grid-left .grid-row:nth-child(3) .field').innerText
+        date: dateEl ? dateEl.innerText : "",
+        address: addrEl ? addrEl.innerText : ""
     };
 
     if (editingId) {
-        await supabaseClient.from('invoices').update({ invoice_no: invNo, client_name: client, invoice_data: invoiceData }).eq('id', editingId);
-        alert("Updated Successfully! ✅");
+        await supabaseClient.from('invoices').update({ 
+            invoice_no: invNoEl.innerText, 
+            client_name: clientEl.innerText, 
+            invoice_data: invoiceData 
+        }).eq('id', editingId);
+        alert("Updated! ✅");
     } else {
-        await supabaseClient.from('invoices').insert([{ invoice_no: invNo, client_name: client, invoice_data: invoiceData }]);
-        alert("Saved to Cloud! ☁️");
+        await supabaseClient.from('invoices').insert([{ 
+            invoice_no: invNoEl.innerText, 
+            client_name: clientEl.innerText, 
+            invoice_data: invoiceData 
+        }]);
+        alert("Saved! ☁️");
     }
 
     editingId = null;
-    await renderSalesList(); // Refresh list from cloud
-    resetInvoice(generateNextInvoiceNo(invNo));
+    await renderSalesList();
+    resetInvoice(generateNextInvoiceNo(invNoEl.innerText));
 }
 
 async function renderSalesList() {
     const list = document.getElementById('salesList');
     if(!list) return;
 
-    // Loading indicator (optional but good for UX)
-    list.innerHTML = '<div style="font-size:12px; color:gray; padding:10px;">Loading Register...</div>';
-
-    const { data, error } = await supabaseClient
-        .from('invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data } = await supabaseClient.from('invoices').select('*').order('created_at', { ascending: false });
     
-    if (error) {
-        console.error("Fetch Error:", error);
-        list.innerHTML = "Error loading data";
-        return;
-    }
-
-    if (data && data.length > 0) {
+    if (data) {
         list.innerHTML = data.map(item => `
-            <div class="sales-card" style="background:#fff; border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <div style="font-weight:700; color:#334155;">${item.client_name}</div>
-                <div style="font-size:11px; color:#64748b;">No: ${item.invoice_no} | ${item.invoice_data.total}</div>
-                <div style="margin-top:8px; display:flex; gap:10px;">
-                    <button onclick="editInvoice('${item.id}')" style="background:#f1f5f9; border:none; cursor:pointer; padding:4px 8px; border-radius:4px;">✏️ Edit</button>
-                    <button onclick="deleteInvoice('${item.id}')" style="background:#f1f5f9; border:none; cursor:pointer; padding:4px 8px; border-radius:4px; color:#ef4444;">🗑️ Delete</button>
+            <div class="sales-card" style="background:#fff; border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:6px;">
+                <div style="font-weight:700;">${item.client_name}</div>
+                <div style="font-size:11px;">No: ${item.invoice_no} | ${item.invoice_data.total}</div>
+                <div style="margin-top:5px;">
+                    <button onclick="editInvoice('${item.id}')" style="cursor:pointer;">✏️</button>
+                    <button onclick="deleteInvoice('${item.id}')" style="cursor:pointer; color:red;">🗑️</button>
                 </div>
             </div>
         `).join('');
-    } else {
-        list.innerHTML = '<div style="font-size:12px; color:gray; padding:10px;">No invoices found.</div>';
     }
 }
 
 async function editInvoice(id) {
-    const { data, error } = await supabaseClient.from('invoices').select('*').eq('id', id).single();
-    if (error) return;
+    const { data } = await supabaseClient.from('invoices').select('*').eq('id', id).single();
+    if (!data) return;
 
     editingId = id;
     const invData = data.invoice_data;
 
-    // Fill Header
     document.querySelector('.grid-left .grid-row:nth-child(1) .field').innerText = data.client_name;
-    document.querySelector('.grid-left .grid-row:nth-child(3) .field').innerText = invData.address;
+    document.querySelector('.grid-left .grid-row:nth-child(3) .field').innerText = invData.address || "";
     document.querySelector('.grid-right .grid-row:nth-child(1) .field').innerText = data.invoice_no;
-    document.querySelector('.grid-right .grid-row:nth-child(2) .field').innerText = invData.date;
+    document.querySelector('.grid-right .grid-row:nth-child(2) .field').innerText = invData.date || "";
 
-    // Fill Table
     const tbody = document.getElementById('itemsBody');
     tbody.innerHTML = "";
     invData.items.forEach(item => addNewRow(item));
-    if(invData.items.length < 10) {
-        for(let i=invData.items.length; i<10; i++) addNewRow();
-    }
+    while(tbody.rows.length < 10) addNewRow();
     
-    document.getElementById('main-save-btn').innerHTML = '<span class="material-symbols-outlined">update</span> UPDATE INVOICE';
+    const saveBtn = document.getElementById('main-save-btn');
+    if(saveBtn) saveBtn.innerHTML = "UPDATE INVOICE";
     calculateInvoice();
 }
 
 async function deleteInvoice(id) {
-    if(confirm("Bhai, pakka delete karna hai?")) {
+    if(confirm("Delete karein?")) {
         await supabaseClient.from('invoices').delete().eq('id', id);
         renderSalesList();
     }
 }
 
 // --- HELPERS ---
-
 function resetInvoice(nextNumber = "") {
     editingId = null;
-    document.getElementById('main-save-btn').innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> SAVE TO REGISTER';
+    const saveBtn = document.getElementById('main-save-btn');
+    if(saveBtn) saveBtn.innerHTML = "SAVE TO REGISTER";
     
-    // Clear all editable fields
     document.querySelectorAll('.billing-grid .field').forEach(f => f.innerText = "");
-    
-    // Set Invoice Number
     if(nextNumber) {
-        document.querySelector('.grid-right .grid-row:nth-child(1) .field').innerText = nextNumber;
+        const invField = document.querySelector('.grid-right .grid-row:nth-child(1) .field');
+        if(invField) invField.innerText = nextNumber;
     }
     
-    document.getElementById('itemsBody').innerHTML = "";
-    for(let i=1; i<=10; i++) addNewRow();
+    const tbody = document.getElementById('itemsBody');
+    if(tbody) {
+        tbody.innerHTML = "";
+        for(let i=1; i<=10; i++) addNewRow();
+    }
     calculateInvoice();
 }
 
@@ -250,8 +252,7 @@ function generateNextInvoiceNo(curr) {
     let parts = curr.split('-');
     let last = parts[parts.length - 1];
     if(!isNaN(last)) {
-        let nextVal = (parseInt(last) + 1).toString().padStart(last.length, '0');
-        parts[parts.length - 1] = nextVal;
+        parts[parts.length - 1] = (parseInt(last) + 1).toString().padStart(last.length, '0');
         return parts.join('-');
     }
     return curr;
