@@ -1,7 +1,3 @@
-if (sessionStorage.getItem('isAllowed') !== 'true') {
-    window.location.href = 'auth.html';
-}
-
 // 1. Supabase Connection
 const supabaseUrl = 'https://zicpxxyoyavgmvephgus.supabase.co'; 
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppY3B4eHlveWF2Z212ZXBoZ3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzEzMTYsImV4cCI6MjA4NzI0NzMxNn0.VxszlGUB3ANLEFS6rZtSHS9h-dP5-4fIiSV6PMIFNJQ';     
