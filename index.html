@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,116 +9,148 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
 
-<div class="app-wrapper">
-    <div class="sidebar no-print">
-        <h2 style="font-weight: 600; color: #06b6d4;">Zenterfy <span class="highlight">Invoices</span></h2>
-        <div class="toggle-group">
-            <button class="toggle-btn active">GST</button>
-            <button class="toggle-btn">Non-GST</button>
-        </div>
-        
-        <button class="action-btn cyan btn-print" onclick="window.print()">Print to PDF</button>
-        <button class="action-btn green" onclick="addNewRow()">Add New Row</button>
-        <button class="save-button" style="background: #00b46f; " onclick="saveInvoice()">Save to Register</button>
+    <div class="app-wrapper">
+        <div class="sidebar no-print">
+            <h2 style="font-weight: 600; color: #06b6d4;">Zenterfy <span class="highlight">Invoices</span></h2>
+            <div class="toggle-group">
+                <button class="toggle-btn active">GST</button>
+                <button class="toggle-btn">Non-GST</button>
+            </div>
 
-        <div class="sales-register-container" style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
-            <h3 style="font-size: 14px; margin-bottom: 10px;">Sales Register</h3>
-            <ul id="salesList" style="font-size: 11px; padding-left: 15px; list-style: decimal; font-size: medium;">
+            <button class="action-btn cyan btn-print" onclick="window.print()">Print to PDF</button>
+            <button class="action-btn green" onclick="addNewRow()">Add New Row</button>
+            <button id="main-save-btn" onclick="saveInvoice()">Save to Register</button>
+            <div class="sales-register-container"
+                style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                <h3 style="font-size: 14px; margin-bottom: 10px;">Sales Register</h3>
+                <ul id="salesList" style="font-size: 11px; padding-left: 15px; list-style: decimal; font-size: medium;">
                 </ul>
-            <button class="delbutton" onclick="localStorage.clear(); renderSalesList();" style="font-size: 10px; margin-top: 10px; cursor: pointer;">Clear History</button>
+                <button class="delbutton" onclick="localStorage.clear(); renderSalesList();"
+                    style="font-size: 10px; margin-top: 10px; cursor: pointer;">Clear History</button>
+            </div>
         </div>
-    </div>
 
-    <div class="invoice-page">
-        <div class="invoice-box">
-            <div class="header-top">
-                <span contenteditable="true">GSTIN: 24CMAPK3117Q1ZZ</span>
-                <span>ORIGINAL FOR RECIPIENT</span>
-            </div>
-
-            <div class="invoice-header">
-                <h1 contenteditable="true">SK ENTERPRISE</h1>
-                <div class="company-address" contenteditable="true">
-                    Shop No 28, Shiv Om Circle, Golden Point, Dared, Phase III, Dared, Jamnagar
+        <div class="invoice-page">
+            <div class="invoice-box">
+                <div class="header-top">
+                    <span contenteditable="true">GSTIN: 24CMAPK3117Q1ZZ</span>
+                    <span>ORIGINAL FOR RECIPIENT</span>
                 </div>
-            </div>
 
-            <div class="tax-label">TAX INVOICE</div>
-
-            <div class="billing-grid">
-                <div class="grid-left">
-                    <div class="grid-row"><label>Billed TO</label><div class="field" contenteditable="true"></div></div>
-                    <div class="grid-row"><label>GSTIN Number</label><div class="field" contenteditable="true"></div></div>
-                    <div class="grid-row"><label>Address</label><div class="field" contenteditable="true"></div></div>
-                </div>
-                <div class="grid-right">
-                    <div class="grid-row"><label>Invoice Number</label><div class="field" contenteditable="true">2025-26-001</div></div>
-                    <div class="grid-row"><label>Invoice Dated</label><div class="field" contenteditable="true"></div></div>
-                    <div class="grid-row"><label>Purchase Order</label><div class="field" contenteditable="true"></div></div>
-                </div>
-            </div>
-
-            <table class="main-items-table">
-                <thead>
-                    <tr><th>SR.</th><th>PARTICULARS</th><th>HSN</th><th>QTY</th><th>RATE</th><th>AMOUNT</th></tr>
-                </thead>
-                <tbody id="itemsBody"></tbody>
-                <tfoot>
-                    <tr class="total-row">
-                        <td colspan="5" style="text-align: right; padding-right: 10px;">SUB TOTAL</td>
-                        <td id="subTotalVal">0.00</td>
-                    </tr>
-                </tfoot>
-            </table>
-
-            <div class="bottom-grid">
-                <div class="words-container">
-                    <p>GST Amount in Words</p>
-                    <strong id="gstWords">ZERO RUPEES ONLY</strong>
-                    <p>Grand Total in Words</p>
-                    <strong id="grandWords">ZERO RUPEES ONLY</strong>
-                </div>
-                <div class="gst-summary">
-                    <table>
-                        <thead>
-                            <tr><th rowspan="2">HSN</th><th colspan="2">CGST</th><th colspan="2">SGST</th><th rowspan="2">TOTAL</th></tr>
-                            <tr><th>TAX %</th><th>AMT (₹)</th><th>TAX %</th><th>AMT (₹)</th></tr>
-                        </thead>
-                        <tbody id="gstBody"></tbody>
-                        <tfoot>
-                            <tr style="font-weight: bold; background: #f1f5f9;">
-                                <td colspan="5" style="text-align: right; padding-right: 5px;">Total GST Amount</td>
-                                <td id="totalTaxSumVal">0.00</td>
-                            </tr>
-                            <tr style="background: #000; color: #fff; font-weight: bold; font-size: 14px;">
-                                <td colspan="5" style="text-align: right; padding-right: 5px;">GRAND TOTAL</td>
-                                <td id="grandTotalVal">₹ 0.00</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <div class="invoice-footer">
-                <div class="bank-details">
-                    <strong style="text-decoration: underline;">BANK DETAILS</strong><br>
-                    <span>Bank Name: <span contenteditable="true">AU Small Finance Bank</span></span><br>
-                    <span>A/c No: <span contenteditable="true">240221225878542</span></span><br>
-                    <span>IFSC: <span contenteditable="true">AUBL0002142</span></span>
-                </div>
-                <div class="sign-area">
-                    <div class="signature-space">
-                        <img src="signature.png" id="userSign" style="height: 60px; display: none;">
+                <div class="invoice-header">
+                    <h1 contenteditable="true">SK ENTERPRISE</h1>
+                    <div class="company-address" contenteditable="true">
+                        Shop No 28, Shiv Om Circle, Golden Point, Dared, Phase III, Dared, Jamnagar
                     </div>
-                    <p style="font-weight: 500;"><i>For, SK Enterprise</i></p>
-                    <p>Authorized Signatory</p>
+                </div>
+
+                <div class="tax-label">TAX INVOICE</div>
+
+                <div class="billing-grid">
+                    <div class="grid-left">
+                        <div class="grid-row"><label>Billed TO</label>
+                            <div class="field" contenteditable="true"></div>
+                        </div>
+                        <div class="grid-row"><label>GSTIN Number</label>
+                            <div class="field" contenteditable="true"></div>
+                        </div>
+                        <div class="grid-row"><label>Address</label>
+                            <div class="field" contenteditable="true"></div>
+                        </div>
+                    </div>
+                    <div class="grid-right">
+                        <div class="grid-row"><label>Invoice Number</label>
+                            <div class="field" contenteditable="true">2025-26-001</div>
+                        </div>
+                        <div class="grid-row"><label>Invoice Dated</label>
+                            <div class="field" contenteditable="true"></div>
+                        </div>
+                        <div class="grid-row"><label>Purchase Order</label>
+                            <div class="field" contenteditable="true"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="main-items-table">
+                    <thead>
+                        <tr>
+                            <th>SR.</th>
+                            <th>PARTICULARS</th>
+                            <th>HSN</th>
+                            <th>QTY</th>
+                            <th>RATE</th>
+                            <th>AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody"></tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="5" style="text-align: right; padding-right: 10px;">SUB TOTAL</td>
+                            <td id="subTotalVal">0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div class="bottom-grid">
+                    <div class="words-container">
+                        <p>GST Amount in Words</p>
+                        <strong id="gstWords">ZERO RUPEES ONLY</strong>
+                        <p>Grand Total in Words</p>
+                        <strong id="grandWords">ZERO RUPEES ONLY</strong>
+                    </div>
+                    <div class="gst-summary">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">HSN</th>
+                                    <th colspan="2">CGST</th>
+                                    <th colspan="2">SGST</th>
+                                    <th rowspan="2">TOTAL</th>
+                                </tr>
+                                <tr>
+                                    <th>TAX %</th>
+                                    <th>AMT (₹)</th>
+                                    <th>TAX %</th>
+                                    <th>AMT (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gstBody"></tbody>
+                            <tfoot>
+                                <tr style="font-weight: bold; background: #f1f5f9;">
+                                    <td colspan="5" style="text-align: right; padding-right: 5px;">Total GST Amount</td>
+                                    <td id="totalTaxSumVal">0.00</td>
+                                </tr>
+                                <tr style="background: #000; color: #fff; font-weight: bold; font-size: 14px;">
+                                    <td colspan="5" style="text-align: right; padding-right: 5px;">GRAND TOTAL</td>
+                                    <td id="grandTotalVal">₹ 0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="invoice-footer">
+                    <div class="bank-details">
+                        <strong style="text-decoration: underline;">BANK DETAILS</strong><br>
+                        <span>Bank Name: <span contenteditable="true">AU Small Finance Bank</span></span><br>
+                        <span>A/c No: <span contenteditable="true">240221225878542</span></span><br>
+                        <span>IFSC: <span contenteditable="true">AUBL0002142</span></span>
+                    </div>
+                    <div class="sign-area">
+                        <div class="signature-space">
+                            <img src="signature.png" id="userSign" style="height: 60px; display: none;">
+                        </div>
+                        <p style="font-weight: 500;"><i>For, SK Enterprise</i></p>
+                        <p>Authorized Signatory</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>
