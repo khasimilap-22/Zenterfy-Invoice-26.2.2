@@ -96,17 +96,10 @@
             if (e.key === "Enter") checkPass();
         }
 
-        // Security Gatekeeper
-        if (sessionStorage.getItem('isAllowed') !== 'true') {
-            window.location.href = 'auth.html';
-        }
-
-        // Baki ka purana code niche...
-        const supabaseUrl = '...';
-        // ... etc
+        
 
     </script>
 
 </body>
-
+    <script src="script.js"></script>
 </html>
