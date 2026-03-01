@@ -1,14 +1,11 @@
-
-
 // 1. Supabase Connection
-const supabaseUrl = 'https://zicpxxyoyavgmvephgus.supabase.co'; 
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppY3B4eHlveWF2Z212ZXBoZ3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzEzMTYsImV4cCI6MjA4NzI0NzMxNn0.VxszlGUB3ANLEFS6rZtSHS9h-dP5-4fIiSV6PMIFNJQ';     
+const supabaseUrl = 'https://zicpxxyoyavgmvephgus.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppY3B4eHlveWF2Z212ZXBoZ3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzEzMTYsImV4cCI6MjA4NzI0NzMxNn0.VxszlGUB3ANLEFS6rZtSHS9h-dP5-4fIiSV6PMIFNJQ';
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-let editingId = null; 
+let editingId = null;
 
-// Page load par list dikhao
-window.onload = function() {
+window.onload = function () {
     renderSalesList();
     resetInvoice("2025-26-001");
 };
@@ -16,7 +13,7 @@ window.onload = function() {
 // --- ROW MANAGEMENT ---
 function addNewRow(data = null) {
     const tbody = document.getElementById('itemsBody');
-    if(!tbody) return;
+    if (!tbody) return;
     const srNo = tbody.rows.length + 1;
     const row = `<tr class="item-row">
         <td>${srNo}</td>
@@ -67,7 +64,7 @@ function calculateInvoice() {
         const qty = parseFloat(row.querySelector('.qty').innerText) || 0;
         const rate = parseFloat(row.querySelector('.rate').innerText) || 0;
         const amount = qty * rate;
-        
+
         row.querySelector('.amount').innerText = amount.toFixed(2);
         subTotal += amount;
 
@@ -77,13 +74,13 @@ function calculateInvoice() {
     });
 
     const subTotalEl = document.getElementById('subTotalVal');
-    if(subTotalEl) subTotalEl.innerText = subTotal.toFixed(2);
+    if (subTotalEl) subTotalEl.innerText = subTotal.toFixed(2);
     updateGstTable(hsnGroups, subTotal);
 }
 
 function updateGstTable(hsnGroups, subTotal) {
     const gstBody = document.getElementById('gstBody');
-    if(!gstBody) return;
+    if (!gstBody) return;
 
     let existingRates = {};
     document.querySelectorAll('#gstBody tr').forEach(row => {
@@ -112,18 +109,39 @@ function updateGstTable(hsnGroups, subTotal) {
 
     setupTaxListeners();
 
-    const grandTotal = subTotal + totalTax;
+    // --- GRAND TOTAL & ROUND OFF LOGIC ---
+    let grandTotal = subTotal + totalTax;
+    const isRoundOffOn = document.getElementById('roundOffToggle').checked;
+    const roundOffRow = document.getElementById('roundOffRow');
+    const roundOffValEl = document.getElementById('roundOffVal');
+
+    if (isRoundOffOn) {
+        let roundedTotal = Math.round(grandTotal);
+        let roundOffDiff = roundedTotal - grandTotal;
+        grandTotal = roundedTotal;
+
+        if (roundOffRow) roundOffRow.style.display = "table-row";
+        if (roundOffValEl) roundOffValEl.innerText = roundOffDiff.toFixed(2);
+    } else {
+        if (roundOffRow) roundOffRow.style.display = "none";
+    }
+
     const taxSumEl = document.getElementById('totalTaxSumVal');
     const grandTotalEl = document.getElementById('grandTotalVal');
-    
-    if(taxSumEl) taxSumEl.innerText = totalTax.toFixed(2);
-    if(grandTotalEl) grandTotalEl.innerText = "₹ " + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+    if (taxSumEl) taxSumEl.innerText = totalTax.toFixed(2);
+    if (grandTotalEl) {
+        grandTotalEl.innerText = "₹ " + grandTotal.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
 
     // Words Conversion
     const gstWords = document.getElementById('gstWords');
     const grandWords = document.getElementById('grandWords');
-    if(gstWords) gstWords.innerText = numberToWords(Math.round(totalTax)) + " RUPEES ONLY";
-    if(grandWords) grandWords.innerText = numberToWords(Math.round(grandTotal)) + " RUPEES ONLY";
+    if (gstWords) gstWords.innerText = numberToWords(Math.round(totalTax)) + " RUPEES ONLY";
+    if (grandWords) grandWords.innerText = numberToWords(Math.round(grandTotal)) + " RUPEES ONLY";
 }
 
 function setupTaxListeners() {
@@ -143,7 +161,7 @@ async function saveInvoice() {
     const dateEl = document.querySelector('.grid-right .grid-row:nth-child(2) .field');
     const addrEl = document.querySelector('.grid-left .grid-row:nth-child(3) .field');
 
-    if(!clientEl || clientEl.innerText.trim() === "") { alert("Bhai, Client Name toh dalo!"); return; }
+    if (!clientEl || clientEl.innerText.trim() === "") { alert("Bhai, Client Name toh dalo!"); return; }
 
     const invoiceData = {
         items: Array.from(document.querySelectorAll('#itemsBody tr')).map(row => ({
@@ -159,17 +177,17 @@ async function saveInvoice() {
     };
 
     if (editingId) {
-        await supabaseClient.from('invoices').update({ 
-            invoice_no: invNoEl.innerText, 
-            client_name: clientEl.innerText, 
-            invoice_data: invoiceData 
+        await supabaseClient.from('invoices').update({
+            invoice_no: invNoEl.innerText,
+            client_name: clientEl.innerText,
+            invoice_data: invoiceData
         }).eq('id', editingId);
         alert("Updated! ✅");
     } else {
-        await supabaseClient.from('invoices').insert([{ 
-            invoice_no: invNoEl.innerText, 
-            client_name: clientEl.innerText, 
-            invoice_data: invoiceData 
+        await supabaseClient.from('invoices').insert([{
+            invoice_no: invNoEl.innerText,
+            client_name: clientEl.innerText,
+            invoice_data: invoiceData
         }]);
         alert("Saved! ☁️");
     }
@@ -181,10 +199,10 @@ async function saveInvoice() {
 
 async function renderSalesList() {
     const list = document.getElementById('salesList');
-    if(!list) return;
+    if (!list) return;
 
     const { data } = await supabaseClient.from('invoices').select('*').order('created_at', { ascending: false });
-    
+
     if (data) {
         list.innerHTML = data.map(item => `
             <div class="sales-card" style="background:#fff; border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:6px;">
@@ -214,15 +232,15 @@ async function editInvoice(id) {
     const tbody = document.getElementById('itemsBody');
     tbody.innerHTML = "";
     invData.items.forEach(item => addNewRow(item));
-    while(tbody.rows.length < 10) addNewRow();
-    
+    while (tbody.rows.length < 10) addNewRow();
+
     const saveBtn = document.getElementById('main-save-btn');
-    if(saveBtn) saveBtn.innerHTML = "UPDATE INVOICE";
+    if (saveBtn) saveBtn.innerHTML = "UPDATE INVOICE";
     calculateInvoice();
 }
 
 async function deleteInvoice(id) {
-    if(confirm("Delete karein?")) {
+    if (confirm("Delete karein?")) {
         await supabaseClient.from('invoices').delete().eq('id', id);
         renderSalesList();
     }
@@ -232,18 +250,18 @@ async function deleteInvoice(id) {
 function resetInvoice(nextNumber = "") {
     editingId = null;
     const saveBtn = document.getElementById('main-save-btn');
-    if(saveBtn) saveBtn.innerHTML = "SAVE TO REGISTER";
-    
+    if (saveBtn) saveBtn.innerHTML = "SAVE TO REGISTER";
+
     document.querySelectorAll('.billing-grid .field').forEach(f => f.innerText = "");
-    if(nextNumber) {
+    if (nextNumber) {
         const invField = document.querySelector('.grid-right .grid-row:nth-child(1) .field');
-        if(invField) invField.innerText = nextNumber;
+        if (invField) invField.innerText = nextNumber;
     }
-    
+
     const tbody = document.getElementById('itemsBody');
-    if(tbody) {
+    if (tbody) {
         tbody.innerHTML = "";
-        for(let i=1; i<=10; i++) addNewRow();
+        for (let i = 1; i <= 10; i++) addNewRow();
     }
     calculateInvoice();
 }
@@ -251,7 +269,7 @@ function resetInvoice(nextNumber = "") {
 function generateNextInvoiceNo(curr) {
     let parts = curr.split('-');
     let last = parts[parts.length - 1];
-    if(!isNaN(last)) {
+    if (!isNaN(last)) {
         parts[parts.length - 1] = (parseInt(last) + 1).toString().padStart(last.length, '0');
         return parts.join('-');
     }
