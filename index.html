@@ -31,6 +31,41 @@
                 <button class="delbutton" onclick="localStorage.clear(); renderSalesList();"
                     style="font-size: 10px; margin-top: 10px; cursor: pointer;">Clear History</button>
             </div>
+
+            <div class="sidebar-item"
+                style="display:flex; align-items:center; gap:10px; padding:15px; border-top:1px solid #eee;">
+                <span style="font-size:14px; font-weight:600; color:#475569;">Round Off Bill</span>
+                <label class="switch" style="position:relative; display:inline-block; width:40px; height:20px;">
+                    <input type="checkbox" id="roundOffToggle" onchange="calculateInvoice()"
+                        style="opacity:0; width:0; height:0;">
+                    <span class="slider"
+                        style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:20px;"></span>
+                </label>
+            </div>
+
+            <style>
+                #roundOffToggle:checked+.slider {
+                    background-color: #2563eb;
+                }
+
+                .slider:before {
+                    position: absolute;
+                    content: "";
+                    height: 14px;
+                    width: 14px;
+                    left: 3px;
+                    bottom: 3px;
+                    background-color: white;
+                    transition: .4s;
+                    border-radius: 50%;
+                }
+
+                #roundOffToggle:checked+.slider:before {
+                    transform: translateX(20px);
+                }
+            </style>
+
+
         </div>
 
         <div class="invoice-page">
@@ -122,6 +157,10 @@
                                 <tr style="font-weight: bold; background: #f1f5f9;">
                                     <td colspan="5" style="text-align: right; padding-right: 5px;">Total GST Amount</td>
                                     <td id="totalTaxSumVal">0.00</td>
+                                </tr>
+                                <tr id="roundOffRow" style="display: none;">
+                                    <td colspan="5" style="text-align: right; font-weight: bold;">Round Off</td>
+                                    <td id="roundOffVal" style="font-weight: bold;">0.00</td>
                                 </tr>
                                 <tr style="background: #000; color: #fff; font-weight: bold; font-size: 14px;">
                                     <td colspan="5" style="text-align: right; padding-right: 5px;">GRAND TOTAL</td>
